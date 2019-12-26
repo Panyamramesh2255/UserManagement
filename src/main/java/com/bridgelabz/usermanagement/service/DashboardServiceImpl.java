@@ -17,6 +17,11 @@ import com.bridgelabz.usermanagement.exception.UnautorizedException;
 import com.bridgelabz.usermanagement.model.RegisterUser;
 import com.bridgelabz.usermanagement.repository.IRegisterRepository;
 import com.bridgelabz.usermanagement.response.Response;
+/**
+ * 
+ * @author PanyamRamesh
+ * purpose: implementing service class for dash board
+ */
 @Service
 public class DashboardServiceImpl implements IDashboardService {
 
@@ -29,6 +34,9 @@ public class DashboardServiceImpl implements IDashboardService {
 	@Autowired
 	BCryptPasswordEncoder bCryptPasswordEncoder;
 	
+	/**
+	 * purpose: method for statistics of registered users
+	 */
 	@Override
 	public HashMap<String, Long> getUserStatistics() {
 		List<RegisterUser> userList=repository.findAll();
@@ -44,11 +52,14 @@ public class DashboardServiceImpl implements IDashboardService {
 		return map; 
 	}
 
+	/**
+	 * purpose: method for getting details of latest registered users
+	 */
 	@Override
 	public List<RegisterUser> getLatestRegisteredUsers() {
 		
 		List<RegisterUser> userList=repository.findAll();
-		userList.sort((RegisterUser user1, RegisterUser user2)->user1.getRegisteredDate().compareTo(user1.getRegisteredDate()));
+		userList.sort((RegisterUser user1, RegisterUser user2)->user2.getRegisteredDate().compareTo(user1.getRegisteredDate()));
 		
 		return userList;
 	}

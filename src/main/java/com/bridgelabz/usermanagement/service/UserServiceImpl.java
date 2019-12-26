@@ -54,6 +54,8 @@ public class UserServiceImpl implements IUserService {
 			throw new LoginException("Please enter both fields!!");
 
 		RegisterUser user1 = regRepository.findByEmailId(user.getEmailId());
+		user1.setIsonline(true);
+		regRepository.save(user1);
 		System.out.println("user.getpassword :" + user.getPassword());
 		System.out.println("user1.getpassword :" + user1.getPassword());
 

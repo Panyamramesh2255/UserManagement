@@ -32,7 +32,6 @@ private String userRole;
 private String profilePic;
 private Boolean verified;
 private Date registeredDate;
-private Boolean onlineStatus;
 private boolean Isactive;
 private boolean Isonline;
 
