@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.modelmapper.ModelMapper;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -36,7 +38,7 @@ public class UserServiceImpl implements IUserService {
 
 	@Autowired
 	private IRegisterRepository regRepository;
-	//@Autowired(required = true)
+	// @Autowired(required = true)
 	private JavaMailSender javaMailSender;
 
 	@Autowired
@@ -47,26 +49,29 @@ public class UserServiceImpl implements IUserService {
 	@Autowired
 	private TokenUtil util;
 
+	Utility utility = new Utility();
+
 	public Response validateCredentials(LoginDTO loginDTO) {
-		RegisterUser user = modelMapper.map(loginDTO, RegisterUser.class);
+		System.out.println("inside validate credentials");
+		try {
+			RegisterUser user = regRepository.findByEmailId(loginDTO.getEmailId());
 
-		if (user.getEmailId().isEmpty() || user.getPassword().isEmpty())
-			throw new LoginException("Please enter both fields!!");
+			if (user.getEmailId().isEmpty() || user.getPassword().isEmpty())
+				throw new LoginException("Please enter both fields!!");
 
-		RegisterUser user1 = regRepository.findByEmailId(user.getEmailId());
-		user1.setIsonline(true);
-		regRepository.save(user1);
-		System.out.println("user.getpassword :" + user.getPassword());
-		System.out.println("user1.getpassword :" + user1.getPassword());
+			if (bCryptPasswordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+				System.out.println("inside password matching");
+				user.setIsonline(true);
+				user.getLoginHistoty().add(new Date());
+				regRepository.save(user);
+				return new Response(200, null, "Login sucess");
+			}
 
-		System.out.println("bCryptPasswordEncoder.matches(user1.getPassword(), user.getPassword())"
-				+ bCryptPasswordEncoder.matches(user1.getPassword(), user.getPassword()));
-		if (user1 == null)
-			throw new LoginException("Invalid EmailId");
-		if (bCryptPasswordEncoder.matches(user1.getPassword(), user.getPassword()))
-			return new Response(200, null, "Login sucess");
-
-		throw new UnautorizedException("Unauthorized User");
+		} catch (Exception e) {
+			throw new UnautorizedException("Unauthorized User");
+			
+		}
+		return new Response(400, null, "LoginFailure");
 	}
 
 	public Response registerUser(RegisterDTO regdto) {
@@ -76,9 +81,9 @@ public class UserServiceImpl implements IUserService {
 		if (regRepository.findByMobile(regdto.getMobile()) != null) {
 			throw new RegistrationException("Mobile number already exist!!");
 		}
-		System.out.println("date before mapping "+regdto.getDob());
+		System.out.println("date before mapping " + regdto.getDob());
 		RegisterUser regUser = modelMapper.map(regdto, RegisterUser.class);
-		System.out.println("date afters mapping "+regUser.getDob());
+		System.out.println("date afters mapping " + regUser.getDob());
 		regUser.setPassword(bCryptPasswordEncoder.encode(regdto.getPassword()));
 		util.sendMail(regdto.getEmailId(), util.encode(regdto.getEmailId()));
 		regUser.setRegisteredDate(new Date());
@@ -166,6 +171,39 @@ public class UserServiceImpl implements IUserService {
 		user.setVerified(true);
 		regRepository.save(user);
 		return new Response(200, null, Utility.RECORD_UPDATED);
+	}
+
+	@Override
+	public RegisterUser getprofile(String email) {
+		RegisterUser registeruser = regRepository.findByEmailId(email);
+		if (registeruser == null) {
+			throw new LoginException("Invalid email");
+		}
+		if (!registeruser.isIsonline()) {
+			throw new LoginException("your are ofline");
+		}
+
+		return registeruser;
+	}
+
+	@Override
+	public Response editProfile(RegisterDTO registerDetails) {
+
+		RegisterUser registerUser = regRepository.findByEmailId(registerDetails.getEmailId());
+		System.out.println("email  " + registerDetails.getEmailId());
+		System.out.println("my details " + registerUser.getAddress());
+		System.out.println("above edit profile method");
+		utility.test();
+		registerUser = utility.editProfile(registerDetails, registerUser);
+		regRepository.save(registerUser);
+		return new Response(200, null, Utility.PROFILEEDITED);
+	}
+
+	@Override
+	public ArrayList<Date> loginHistory(String email) {
+		RegisterUser user = regRepository.findByEmailId(email);
+		ArrayList<Date> loginHistory = user.getLoginHistoty();
+		return loginHistory;
 	}
 
 }

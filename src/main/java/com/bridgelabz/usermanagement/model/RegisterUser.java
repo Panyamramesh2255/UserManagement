@@ -1,5 +1,6 @@
 package com.bridgelabz.usermanagement.model;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 import org.springframework.data.annotation.Id;
@@ -39,5 +40,6 @@ private Boolean verified;
 private Date registeredDate;
 private boolean Isactive;
 private boolean Isonline;
+private ArrayList<Date> loginHistoty=new ArrayList<>();
 
 }

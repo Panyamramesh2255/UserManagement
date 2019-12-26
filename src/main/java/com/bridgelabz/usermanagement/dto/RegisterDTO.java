@@ -1,5 +1,6 @@
 package com.bridgelabz.usermanagement.dto;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 import lombok.Data;
@@ -26,4 +27,6 @@ public class RegisterDTO {
 	private String confirmPassword;
 	private String userRole;
 	private String profilePic;
+	private boolean status;
+	
 }

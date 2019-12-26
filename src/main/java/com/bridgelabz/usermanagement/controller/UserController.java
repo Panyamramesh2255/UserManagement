@@ -1,17 +1,16 @@
 package com.bridgelabz.usermanagement.controller;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.context.annotation.PropertySources;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +29,6 @@ public class UserController {
 
 	@Autowired
 	private IUserService userService;
-	
 
 	/**
 	 * Purpose: For user login
@@ -68,4 +66,43 @@ public class UserController {
 		return new ResponseEntity<>(list, HttpStatus.OK);
 	}
 
+	/**
+	 * purpose: API to get user profile
+	 */
+	@GetMapping("/profile")
+	public ResponseEntity<RegisterUser> getProfile(@RequestHeader String email) {
+
+		RegisterUser registerUser = userService.getprofile(email);
+		return new ResponseEntity<RegisterUser>(registerUser, HttpStatus.OK);
+
+	}
+
+	/**
+	 * purpose: API to edit user profile
+	 * 
+	 * @param regsiterDetails
+	 * @return
+	 */
+	@PutMapping("/profile")
+	public ResponseEntity<Response> editProfile(@RequestBody RegisterDTO regsiterDetails) {
+
+		Response response = userService.editProfile(regsiterDetails);
+
+		return new ResponseEntity<Response>(response, HttpStatus.OK);
+
+	}
+
+	/**
+	 * purpose: API to get login history of a registered user
+	 * @param email
+	 * @return
+	 */
+	@GetMapping("/loginhistory")
+	public ResponseEntity<ArrayList<Date>> loginHistory(@RequestHeader String email) {
+
+		ArrayList<Date> history = userService.loginHistory(email);
+
+		return new ResponseEntity<ArrayList<Date>>(history, HttpStatus.OK);
+
+	}
 }
