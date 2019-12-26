@@ -4,6 +4,11 @@ import java.util.Date;
 
 import lombok.Data;
 
+
+/**
+ * @author PanyamRamesh
+ * purpose: DTO class for Registration
+ */
 @Data
 public class RegisterDTO {
 	private String emailId;

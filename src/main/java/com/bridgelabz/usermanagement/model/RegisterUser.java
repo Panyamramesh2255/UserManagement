@@ -9,6 +9,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * 
+ * @author PanyamRamesh
+ * purpose: Model class for RegistrationUsers
+ */
 @Document(collection = "User")
 @Data
 @AllArgsConstructor

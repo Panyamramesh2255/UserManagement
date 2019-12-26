@@ -13,6 +13,11 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
 import com.bridgelabz.usermanagement.response.Response;
 
+/**
+ * 
+ * @author PanyamRamesh
+ * purpose: Util class for token
+ */
 @Component
 public class TokenUtil {
 

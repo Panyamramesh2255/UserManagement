@@ -1,5 +1,9 @@
 package com.bridgelabz.usermanagement.util;
-
+/**
+ * 
+ * @author PanyamRamesh
+ * purpose: Utility class for repose messages
+ */
 public class Utility {
 	public static final String RECORD_UPDATED="Record updated successfully";
 	public static final String RECORD_DELETED="Record deleted successfully";
