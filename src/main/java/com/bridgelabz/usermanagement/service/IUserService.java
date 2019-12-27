@@ -24,7 +24,7 @@ public interface IUserService {
 
 	public Response registerUser(RegisterDTO regdto);
 
-	public Response sendEmail(String email, String token);
+	public Response sendMail(String email,String token);
 
 	public Response saveProfilePic(MultipartFile file, String emailId) throws Exception;
 
@@ -41,4 +41,6 @@ public interface IUserService {
 	public Response editProfile(RegisterDTO regsiterDetails);
 
 	public ArrayList<Date> loginHistory(String email);
+	
+	public Response logout(String email);
 }

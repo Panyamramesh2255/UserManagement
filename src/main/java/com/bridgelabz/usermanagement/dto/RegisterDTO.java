@@ -27,6 +27,6 @@ public class RegisterDTO {
 	private String confirmPassword;
 	private String userRole;
 	private String profilePic;
-	private boolean status;
+	
 	
 }

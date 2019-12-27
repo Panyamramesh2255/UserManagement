@@ -94,6 +94,7 @@ public class UserController {
 
 	/**
 	 * purpose: API to get login history of a registered user
+	 * 
 	 * @param email
 	 * @return
 	 */
@@ -103,6 +104,19 @@ public class UserController {
 		ArrayList<Date> history = userService.loginHistory(email);
 
 		return new ResponseEntity<ArrayList<Date>>(history, HttpStatus.OK);
+
+	}
+
+	/**
+	 * purpose: API for logout functionality
+	 * @param email
+	 * @return
+	 */
+	@GetMapping("/logout")
+	public ResponseEntity<Response> logout(@RequestHeader String email) {
+
+		Response response = userService.logout(email);
+		return new ResponseEntity<Response>(response, HttpStatus.OK);
 
 	}
 }

@@ -22,10 +22,9 @@ import com.bridgelabz.usermanagement.response.Response;
 public class TokenUtil {
 
 	String TOKEN_SECRET = "forgotpassword";
-	
-	private JavaMailSender javaMailSender;
 	@Autowired
-	Environment environment;
+	private JavaMailSender javaMailSender;;
+	
 
 	public  String encode(String email) {
 		String token = "";
@@ -41,20 +40,24 @@ public class TokenUtil {
 		return token;
 
 	}
-	//@Cacheable(value = "note", key = "#emailDataModel")
+	
 	public Response sendMail(String email,String token) {
 		try {
 		SimpleMailMessage mail = new SimpleMailMessage();
+		mail.setFrom("panyamramesh2255@gmail.com");
 		mail.setTo(email);
 		mail.setSubject("Verification Code:");
 		mail.setText(token);
+		System.out.println("mail sender "+javaMailSender);
+		System.out.println("simple mail "+mail);
 		javaMailSender.send(mail);
-		return new Response(200, null, environment.getProperty("mailsent"));
+		System.out.println("mail sended successfullt to "+email);
+		return new Response(200, null,Utility.MAILSENT);
 		}catch(Exception e)
 		{
-			return new Response(200, null, environment.getProperty("mailnotsent"));
+			e.printStackTrace();
 		}
-
+		return new Response(400, null, Utility.MAILNOTSENT); 
 	}
 
 	public String decode(String token) {

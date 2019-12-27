@@ -1,10 +1,8 @@
 package com.bridgelabz.usermanagement.util;
 
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.bridgelabz.usermanagement.dto.RegisterDTO;
 import com.bridgelabz.usermanagement.model.RegisterUser;
-import com.bridgelabz.usermanagement.repository.IRegisterRepository;
 
 /**
  * 
@@ -22,6 +20,10 @@ public class Utility {
 	public static final String EMPTY_FIELD = "Input fields can't be empty";
 	public static final String PROFILE_PIC_LOCATION = "/home/admin1/Desktop/Profile_Picture/";
 	public static final String PROFILEEDITED = "profile edited successfully";
+	public static final String MAILSENT = "main sent successfully";
+	public static final String MAILNOTSENT = "main not sent successfully";
+	public static final String LOGOUTSUCCESS = "Logout done successfully";
+	public static final String LOGOUTFAILURE = "Logout failure";
 
 	public Utility() {
 
@@ -51,7 +53,7 @@ public class Utility {
 		user.setConfirmPassword(registerUser.getConfirmPassword());
 		user.setUserRole(registerUser.getUserRole());
 		user.setProfilePic(registerUser.getProfilePic());
-		user.setIsactive(registerUser.isStatus());
+		user.setIsactive(true);
 
 		return user;
 
