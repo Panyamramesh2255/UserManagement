@@ -8,13 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
 import com.bridgelabz.usermanagement.dto.DashDTO;
-import com.bridgelabz.usermanagement.model.User;
+import com.bridgelabz.usermanagement.model.RegisterUser;
 import com.bridgelabz.usermanagement.repository.IDashboardRepository;
 import com.bridgelabz.usermanagement.response.Response;
 
@@ -30,7 +27,7 @@ public class DashboardServiceImpl implements IDashboardService {
 	 * @return hashmap with percentage of male and female registered users
 	 */
 	@Override
-	public HashMap<String, Double> getGenderPercentage(List<User> userList) {
+	public HashMap<String, Double> getGenderPercentage(List<RegisterUser> userList) {
 
 		Double maleCount = (double) userList.stream().filter(x -> "Male".equals(x.getGender())).count();
 		Double femaleCount = (double) userList.stream().filter(x -> "Female".equals(x.getGender())).count();
@@ -47,8 +44,9 @@ public class DashboardServiceImpl implements IDashboardService {
 	 * @return map with highest registered users
 	 */
 	@Override
-	public Map<String, Integer> getTopCountries(List<User> userList) {
-		Map<String, List<User>> studlistGrouped = userList.stream().collect(Collectors.groupingBy(w -> w.getCountry()));
+	public Map<String, Integer> getTopCountries(List<RegisterUser> userList) {
+		Map<String, List<RegisterUser>> studlistGrouped = userList.stream()
+				.collect(Collectors.groupingBy(w -> w.getCountry()));
 		Set<String> key = studlistGrouped.keySet();
 
 		Map<String, Integer> topList = new LinkedHashMap<>();
@@ -67,7 +65,7 @@ public class DashboardServiceImpl implements IDashboardService {
 	 * @return map containing number of registered users based on age group
 	 */
 	@Override
-	public HashMap<String, Long> getAgeGroup(List<User> userList) {
+	public HashMap<String, Long> getAgeGroup(List<RegisterUser> userList) {
 		long ageLessThan18 = userList.stream().filter(x -> LocalDate.now().getYear() - x.getDob().getYear() < 18)
 				.count();
 		long ageGreaterThan42 = userList.stream().filter(x -> LocalDate.now().getYear() - x.getDob().getYear() > 42)
@@ -106,7 +104,7 @@ public class DashboardServiceImpl implements IDashboardService {
 	public Response getUserStat(int year, int month) {
 
 		DashDTO dashboard = new DashDTO();
-		List<User> userList = null;
+		List<RegisterUser> userList = null;
 		if (year == 0 && month == 0) {
 			userList = dashRepository.findAll();
 			dashboard.setUserRegistrationCount(getAlltime());
@@ -130,7 +128,7 @@ public class DashboardServiceImpl implements IDashboardService {
 		dashboard.setTopCountries(getTopCountries(userList));
 		dashboard.setGenderPercentage(getGenderPercentage(userList));
 		dashboard.setAgeGroup(getAgeGroup(userList));
-		return new Response(HttpStatus.OK, dashboard, "All time data");
+		return new Response(200, dashboard, "All time data");
 	}
 
 	/**
@@ -139,8 +137,8 @@ public class DashboardServiceImpl implements IDashboardService {
 	 */
 	@Override
 	public Map<Integer, Integer> getAlltime() {
-		List<User> userList = dashRepository.findAll();
-		Map<Integer, List<User>> yearGrouped = userList.stream()
+		List<RegisterUser> userList = dashRepository.findAll();
+		Map<Integer, List<RegisterUser>> yearGrouped = userList.stream()
 				.collect(Collectors.groupingBy(w -> w.getRegisteredDate().getYear()));
 		Set<Integer> key = yearGrouped.keySet();
 
@@ -162,9 +160,9 @@ public class DashboardServiceImpl implements IDashboardService {
 	 */
 	@Override
 	public Map<Object, Integer> getAllByYear(Integer year) {
-		List<User> userList = dashRepository.findAll();
+		List<RegisterUser> userList = dashRepository.findAll();
 
-		Map<Object, List<User>> yearGrouped = userList.stream()
+		Map<Object, List<RegisterUser>> yearGrouped = userList.stream()
 				.filter(x -> year.equals(x.getRegisteredDate().getYear()))
 				.collect(Collectors.groupingBy(w -> w.getRegisteredDate().getMonth()));
 		Set<Object> key = yearGrouped.keySet();
@@ -197,6 +195,37 @@ public class DashboardServiceImpl implements IDashboardService {
 		HashMap<Object, Long> byMonthYear = new HashMap<>();
 		byMonthYear.put(monthName[month - 1], count);
 		return byMonthYear;
+	}
+
+	/**
+	 * purpose: method for statistics of registered users
+	 */
+	@Override
+	public HashMap<String, Long> getUserStatistics() {
+		List<RegisterUser> userList = dashRepository.findAll();
+		HashMap<String, Long> map = new HashMap<String, Long>();
+		long total = userList.size();
+		long active = userList.stream().filter(c -> c.isIsactive()).count();
+		long inactive = total - active;
+		long online = userList.stream().filter(c -> c.isIsonline()).count();
+		map.put("total ", total);
+		map.put("active ", active);
+		map.put("inactive ", inactive);
+		map.put("online ", online);
+		return map;
+	}
+
+	/**
+	 * purpose: method for getting details of latest registered users
+	 */
+	@Override
+	public List<RegisterUser> getLatestRegisteredUsers() {
+
+		List<RegisterUser> userList = dashRepository.findAll();
+		userList.sort((RegisterUser user1, RegisterUser user2) -> user2.getRegisteredDate()
+				.compareTo(user1.getRegisteredDate()));
+
+		return userList;
 	}
 
 }

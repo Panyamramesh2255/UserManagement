@@ -307,4 +307,8 @@ exec "$JAVACMD" \
   $MAVEN_OPTS \
   -classpath "$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.jar" \
   "-Dmaven.home=${M2_HOME}" "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
+<<<<<<< HEAD
   ${WRAPPER_LAUNCHER} $MAVEN_CONFIG "$@"
+=======
+  ${WRAPPER_LAUNCHER} $MAVEN_CONFIG "$@" 
+>>>>>>> 92ac01d070f95ec42b5230d94714c190d7d8c8d3

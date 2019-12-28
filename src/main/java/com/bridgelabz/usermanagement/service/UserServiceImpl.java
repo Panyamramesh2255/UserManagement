@@ -5,20 +5,37 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.bridgelabz.usermanagement.dto.DashDTO;
+import com.bridgelabz.usermanagement.dto.LoginDTO;
 import com.bridgelabz.usermanagement.dto.RegisterDTO;
 import com.bridgelabz.usermanagement.exception.LoginException;
 import com.bridgelabz.usermanagement.exception.RegistrationException;
 import com.bridgelabz.usermanagement.exception.UnautorizedException;
-import com.bridgelabz.usermanagement.model.User;
+import com.bridgelabz.usermanagement.model.RegisterUser;
 import com.bridgelabz.usermanagement.repository.IRegisterRepository;
 import com.bridgelabz.usermanagement.response.Response;
 import com.bridgelabz.usermanagement.util.TokenUtil;
@@ -38,55 +55,81 @@ public class UserServiceImpl implements IUserService {
 
 	@Autowired
 	private BCryptPasswordEncoder bCryptPasswordEncoder;
+	@Autowired
+	private TokenUtil util;
 
-	public Response validateCredentials(String email, String password) {
-		if (email.isEmpty() || password.isEmpty())
-			throw new LoginException("Please enter both fields!!");
-		User user = regRepository.findByEmailId(email);
-		if (user == null)
-			throw new LoginException("Invalid EmailId");
-		boolean result = bCryptPasswordEncoder.matches(password, user.getPassword());
+	Utility utility = new Utility();
 
-		if (result)
-			return new Response(HttpStatus.OK, null, "Login sucess");
-		throw new UnautorizedException("Unauthorized User");
+	/**
+	 * purpose: login service method
+	 */
+	public Response validateCredentials(LoginDTO loginDTO) {
+		System.out.println("inside validate credentials");
+		try {
+			RegisterUser user = regRepository.findByEmailId(loginDTO.getEmailId());
+
+			if (user.getEmailId().isEmpty() || user.getPassword().isEmpty())
+				throw new LoginException("Please enter both fields!!");
+
+			if (bCryptPasswordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+				System.out.println("inside password matching");
+				user.setIsonline(true);
+				user.getLoginHistoty().add(new Date());
+				regRepository.save(user);
+				return new Response(200, null, "Login sucess");
+			}
+
+		} catch (Exception e) {
+			throw new UnautorizedException("Unauthorized User");
+
+		}
+		return new Response(400, null, "LoginFailure");
 	}
 
+	/**
+	 * purpose: Registration service method
+	 */
 	public Response registerUser(RegisterDTO regdto) {
-
 		if (regRepository.findByEmailId(regdto.getEmailId()) != null) {
 			throw new RegistrationException("EmailId already exist!!");
 		}
-
-		User regUser = modelMapper.map(regdto, User.class);
+		if (regRepository.findByMobile(regdto.getMobile()) != null) {
+			throw new RegistrationException("Mobile number already exist!!");
+		}
+		RegisterUser regUser = modelMapper.map(regdto, RegisterUser.class);
 		regUser.setPassword(bCryptPasswordEncoder.encode(regdto.getPassword()));
-		regUser.setConfirmPassword(bCryptPasswordEncoder.encode(regdto.getConfirmPassword()));
-		sendEmail(regdto.getEmailId(), TokenUtil.getJWTToken(regdto.getEmailId()));
-
+		sendEmail(regdto.getEmailId(), util.getJWTToken(regdto.getEmailId()));
+		regUser.setRegisteredDate(LocalDate.now());
+		regUser.setIsactive(true);
+		givepermissions(regUser);
 		regRepository.save(regUser);
-
-		return new Response(HttpStatus.OK, null, "success");
-
+		verifyUser(regUser.getEmailId());
+		return new Response(200, null, "success");
 	}
 
-	public Response sendEmail(String email, String token) {
-		SimpleMailMessage mail = new SimpleMailMessage();
-		mail.setTo(email);
-		mail.setSubject("Testing Mail API");
-		mail.setText("Use this token to change password ===>  " + token);
-		javaMailSender.send(mail);
-		return new Response(HttpStatus.OK, null, "Mail sent successfully...");
-
-	}
-
+	/**
+	 * purpose: method to send mail
+	 */
 	@Override
-	public String getJWTToken(String email) {
-		return TokenUtil.getJWTToken(email);
+	public Response sendEmail(String email, String token) {
+		try {
+			SimpleMailMessage mail = new SimpleMailMessage();
+			mail.setFrom("panyamramesh2255@gmail.com");
+			mail.setTo(email);
+			mail.setSubject("Verification Code:");
+			mail.setText(token);
+			javaMailSender.send(mail);
+			System.out.println("mail sended successfullt to " + email);
+			return new Response(200, null, Utility.MAILSENT);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new Response(400, null, Utility.MAILNOTSENT);
 	}
 
 	@Override
 	public Response saveProfilePic(MultipartFile file, String emailId) throws Exception {
-		User user = regRepository.findByEmailId(emailId);
+		RegisterUser user = regRepository.findByEmailId(emailId);
 		if (user == null)
 			throw new UnautorizedException("Unautorized User");
 
@@ -98,17 +141,20 @@ public class UserServiceImpl implements IUserService {
 
 		user.setProfilePic(fileLocation);
 		regRepository.save(user);
-		return new Response(HttpStatus.OK, null, Utility.RECORD_UPDATED);
+		return new Response(200, null, Utility.RECORD_UPDATED);
 	}
 
+	/**
+	 * purpose: method to get all user details
+	 */
 	@Override
-	public List<User> getUsers() {
+	public List<RegisterUser> getUsers() {
 		return regRepository.findAll();
 	}
 
 	@Override
 	public Response deleteProfilePic(String emailId) {
-		User register = regRepository.findByEmailId(emailId);
+		RegisterUser register = regRepository.findByEmailId(emailId);
 		if (register == null)
 			throw new UnautorizedException("Unautorized User");
 
@@ -117,12 +163,12 @@ public class UserServiceImpl implements IUserService {
 		file.delete();
 		register.setProfilePic("");
 		regRepository.save(register);
-		return new Response(HttpStatus.OK, null, Utility.RECORD_UPDATED);
+		return new Response(200, null, Utility.RECORD_UPDATED);
 	}
 
 	public Response updateProfilePic(MultipartFile file, String emailId) throws IOException {
 
-		User register = regRepository.findByEmailId(emailId);
+		RegisterUser register = regRepository.findByEmailId(emailId);
 		if (register == null)
 			throw new UnautorizedException("Unautorized User");
 
@@ -134,17 +180,253 @@ public class UserServiceImpl implements IUserService {
 
 		register.setProfilePic(fileLocation);
 		regRepository.save(register);
-		return new Response(HttpStatus.OK, null, Utility.RECORD_UPDATED);
+		return new Response(200, null, Utility.RECORD_UPDATED);
 
 	}
 
 	@Override
 	public Response verifyUser(String email) {
-		User user = regRepository.findByEmailId(email);
+		RegisterUser user = regRepository.findByEmailId(email);
 		if (user == null)
 			throw new UnautorizedException("Unautorized user");
+		user.setVerified(true);
 		regRepository.save(user);
-		return new Response(HttpStatus.OK, null, Utility.RECORD_UPDATED);
+		return new Response(200, null, Utility.RECORD_UPDATED);
+	}
+
+	/**
+	 * purpose: method to get profile of a particular user
+	 */
+	@Override
+	public RegisterUser getprofile(String email) {
+		RegisterUser registeruser = regRepository.findByEmailId(email);
+		if (registeruser == null) {
+			throw new LoginException("Invalid email");
+		}
+		if (!registeruser.isIsonline()) {
+			throw new LoginException("your are ofline");
+		}
+
+		return registeruser;
+	}
+
+	/**
+	 * purpose: method to edit profile
+	 */
+	@Override
+	public Response editProfile(RegisterDTO registerDetails) {
+
+		RegisterUser registerUser = regRepository.findByEmailId(registerDetails.getEmailId());
+		System.out.println("email  " + registerDetails.getEmailId());
+		System.out.println("my details " + registerUser.getAddress());
+		System.out.println("above edit profile method");
+		utility.test();
+		registerUser = utility.editProfile(registerDetails, registerUser);
+		regRepository.save(registerUser);
+		return new Response(200, null, Utility.PROFILEEDITED);
+	}
+
+	/**
+	 * purpose: method to get login history of a registered user
+	 */
+	@Override
+	public ArrayList<Date> loginHistory(String email) {
+		RegisterUser user = regRepository.findByEmailId(email);
+		ArrayList<Date> loginHistory = user.getLoginHistoty();
+		return loginHistory;
+	}
+
+	/**
+	 * purpose: logout method
+	 */
+	@Override
+	public Response logout(String email) {
+		RegisterUser user = regRepository.findByEmailId(email);
+		System.out.println("user details " + user);
+		if (user.isIsonline()) {
+			user.setIsonline(false);
+			regRepository.save(user);
+			return new Response(200, null, Utility.LOGOUTSUCCESS);
+		}
+		return new Response(400, null, Utility.LOGOUTFAILURE);
+	}
+
+	public void givepermissions(RegisterUser user) {
+
+		if (user.getUserRole().contains("user")) {
+			user.getPermissions().put("Dashboard", new HashMap() {
+				{
+					put("Add", false);
+				}
+				{
+					put("Delete", false);
+				}
+				{
+					put("modify", false);
+				}
+				{
+					put("read", false);
+				}
+			});
+			user.getPermissions().put("Settings", new HashMap() {
+				{
+					put("Add", false);
+				}
+				{
+					put("Delete", false);
+				}
+				{
+					put("modify", false);
+				}
+				{
+					put("read", false);
+				}
+			});
+			user.getPermissions().put("User Information", new HashMap() {
+				{
+					put("Add", false);
+				}
+				{
+					put("Delete", false);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", false);
+				}
+			});
+			user.getPermissions().put("Web page 1", new HashMap() {
+				{
+					put("Add", true);
+				}
+				{
+					put("Delete", false);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", true);
+				}
+			});
+			user.getPermissions().put("Web page 2", new HashMap() {
+				{
+					put("Add", true);
+				}
+				{
+					put("Delete", false);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", true);
+				}
+			});
+			user.getPermissions().put("Web page 3", new HashMap() {
+				{
+					put("Add", true);
+				}
+				{
+					put("Delete", false);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", true);
+				}
+			});
+
+		} else {
+			user.getPermissions().put("Dashboard", new HashMap() {
+				{
+					put("Add", true);
+				}
+				{
+					put("Delete", true);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", true);
+				}
+			});
+			user.getPermissions().put("Settings", new HashMap() {
+				{
+					put("Add", true);
+				}
+				{
+					put("Delete", true);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", true);
+				}
+			});
+			user.getPermissions().put("User Information", new HashMap() {
+				{
+					put("Add", true);
+				}
+				{
+					put("Delete", true);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", true);
+				}
+			});
+			user.getPermissions().put("Web page 1", new HashMap() {
+				{
+					put("Add", true);
+				}
+				{
+					put("Delete", true);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", true);
+				}
+			});
+			user.getPermissions().put("Web page 2", new HashMap() {
+				{
+					put("Add", true);
+				}
+				{
+					put("Delete", true);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", true);
+				}
+			});
+			user.getPermissions().put("Web page 3", new HashMap() {
+				{
+					put("Add", true);
+				}
+				{
+					put("Delete", true);
+				}
+				{
+					put("modify", true);
+				}
+				{
+					put("read", true);
+				}
+			});
+
+		}
+
 	}
 
 }
