@@ -20,6 +20,18 @@ public class DashboardController {
 	@Autowired
 	private IDashboardService dashService;
 
+	
+	/**
+	 * purpose: API for registered statistics of user
+	 * @return
+	 */
+	@GetMapping("/statistics")
+	public ResponseEntity<HashMap<String, Long>> getStatistics() {
+		HashMap<String, Long> userCount = dashboardService.getUserStatistics();
+		return new ResponseEntity<HashMap<String, Long>>(userCount, HttpStatus.OK);
+
+	}
+	
 	/**
 	 * 
 	 * @param year
