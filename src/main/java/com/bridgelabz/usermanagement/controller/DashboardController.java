@@ -33,7 +33,9 @@ public class DashboardController {
 	}
 	
 	/**
-	 * 
+	 * Sample requests:/userstatistics/2019/05-> particular month data,
+	 * /userstatistics/2010/0->particular year data ,/userstatistics/0/0-> Alltime data,
+	 * /userstatistics/0/05->current month data
 	 * @param year
 	 * @param month
 	 * @return response with user registration statistics
