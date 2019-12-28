@@ -9,33 +9,33 @@ import lombok.Data;
  */
 @Data
 public class RegisterDTO {
-	@NonNull
+	@NotNull(message = "email field is mandtory" )
 	private String emailId;
-	@NonNull
+	@NotNull(message = "first name field is mandtory")
 	private String firstName;
-	@NonNull
+	@NotNull(message = "middleName field is mandtory")
 	private String middleName;
-	@NonNull
+	@NotNull(message = "lastName field is mandtory")
 	private String lastName;
-	@NonNull
+	@NotNull(message = "date of birth field is mandtory")
 	private LocalDate dob;
-	@NonNull
+	@NotNull(message = "address field is mandtory")
 	private String address;
-	@NonNull
+	@NotNull(message = "gender field is mandtory ")
 	private String gender;
-	@NonNull
+	@NotNull(message = "country field is mandtory")
 	private String country;
-	@NonNull
+	@NotNull(message = "mobile number field is mandtory")
 	private String mobile;
-	@NonNull
+	@NotNull(message = "phoneExt field is mandtory")
 	private String phoneExt;
-	@NonNull
+	@NotNull(message = "userName field is mandtory")
 	private String userName;
-	@NonNull
+	@NotNull(message = "password field is mandtory")
 	private String password;
-	@NonNull
+	@NotNull(message = "confirm password field is mandtory")
 	private String confirmPassword;
-	@NonNull
+	@NotNull(message = "userRole field is mandtory")
 	private String userRole;
 	private String profilePic;
 
